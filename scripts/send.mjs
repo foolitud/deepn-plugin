@@ -1,7 +1,7 @@
 #!/usr/bin/env node
-// Sends to Deepn the lines the person agreed to. It reads one line per fact from stdin, each after `essentiel:`, `sensible:` or
-// `refusé:`, because Claude Code stops a command holding JSON. What it prints is said to the person as it is. The token never
-// goes through Claude, which only sees the short code.
+// Sends to Deepn the lines the person agreed to. It reads one line per fact from stdin, each after `essentiel`, `sensible` or
+// `refusé`, then the last day it was seen and a colon, because Claude Code stops a command holding JSON. What it prints is said
+// to the person as it is. The token never goes through Claude, which only sees the short code.
 import { addRefused, ask, dataFolder, forgetToken, noteSent, refusedIn, saveToken, tokenIn } from './deepn.mjs'
 
 const MOST_LINES = 40
@@ -12,10 +12,12 @@ const WRONG_CODE = 'Ce code ne va pas. Demandez-en un autre dans Deepn, sous Con
 let input = ''
 for await (const chunk of process.stdin) input += chunk
 const lines = input.split('\n').flatMap((line) => {
-  const [, kind, text] = line.match(/^(essentiel|sensible|refusé):\s*(.+)$/) ?? []
-  return kind ? [{ kind, text: text.trim() }] : []
+  const [, kind, seenOn, text] = line.match(/^(essentiel|sensible|refusé)(?:\s+(\d{4}-\d{2}-\d{2}))?\s*:\s*(.+)$/) ?? []
+  return kind ? [{ kind, seenOn, text: text.trim() }] : []
 })
-const facts = lines.filter(({ kind }) => kind !== 'refusé').map(({ kind, text }) => ({ text, sensitive: kind === 'sensible' }))
+const facts = lines
+  .filter(({ kind }) => kind !== 'refusé')
+  .map(({ kind, seenOn, text }) => ({ text, sensitive: kind === 'sensible', ...(seenOn ? { seenOn } : {}) }))
 const refused = lines.filter(({ kind }) => kind === 'refusé').map(({ text }) => text)
 
 const data = dataFolder()

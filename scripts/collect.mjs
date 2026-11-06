@@ -22,7 +22,10 @@ const MEMORY_DAYS = 60
 const PROMPT_DAYS = 30
 const LONG_PROMPT_WORDS = 15
 const MAX_PROMPT = 280
-const MAX_PROMPTS = 30_000
+// What is burning comes first: the latest questions and requests in full, then a sample of the rest of the month.
+const MAX_QUESTIONS = 10_000
+const MAX_RECENT = 12_000
+const MAX_OLDER = 8_000
 
 // What looks like a key: a prompt holding one is dropped whole, and any other text gets it masked.
 const KEY = /\bsk-[\w-]{16,}|\bgh[pousr]_\w{20,}|\bxox[abprs]-[\w-]+|\bAKIA[0-9A-Z]{12,}|\beyJ[\w-]{20,}\.[\w-]+|\bdp\.[a-z]+\.\w{20,}|\b[a-f0-9]{32,}\b|\b[A-Za-z0-9+/_-]{40,}\b/
@@ -42,6 +45,9 @@ const mask = (text) =>
 const clip = (text, max) => (text.length > max ? `${text.slice(0, max)}…` : text)
 const oneLine = (text) => text.replace(/\s+/g, ' ').trim()
 const read = (path) => (existsSync(path) ? readFileSync(path, 'utf8') : '')
+/** The day, on this Mac's clock: what Claude reads, compares and sends back. */
+const day = (ms) => new Date(ms).toLocaleDateString('sv-SE')
+const modifiedOn = (path) => (existsSync(path) ? day(statSync(path).mtimeMs) : '')
 
 // The words of someone who does not know yet, which requests like « est-ce que tu peux » would drown.
 const QUESTION = /c'est quoi|ça veut dire|ca veut dire|je (ne )?comprends pas|comment (ça|ca) (marche|fonctionne)|pourquoi|explique|quelle différence|la différence|je (ne )?sais pas|what is|what does|how does|why |explain|don't understand|difference between/i
@@ -71,6 +77,25 @@ function memories() {
 // A memory is often copied from one project to the next.
 const once = (rows, key) => [...new Map(rows.map((row) => [key(row), row])).values()]
 
+/** Newest first, as many as fit. */
+function newest(rows, budget) {
+  const kept = []
+  let used = 0
+  for (const row of rows) {
+    if (used + row.text.length > budget) break
+    kept.push(row)
+    used += row.text.length
+  }
+  return kept
+}
+
+/** An even sample across the whole span, still newest first. */
+function spread(rows, budget) {
+  const room = Math.floor(budget / MAX_PROMPT)
+  const step = Math.max(1, rows.length / Math.max(1, room))
+  return Array.from({ length: Math.min(room, rows.length) }, (_, index) => rows[Math.floor(index * step)])
+}
+
 function prompts(since) {
   const rows = read(join(CLAUDE, 'history.jsonl'))
     .split('\n')
@@ -87,18 +112,20 @@ function prompts(since) {
   const kept = rows
     .filter((row) => row.timestamp > since && row.display && !row.display.startsWith('/'))
     .filter((row) => row.display.split(/\s+/).length > LONG_PROMPT_WORDS && !KEY.test(row.display))
-    .map((row) => ({ project: basename(row.project ?? ''), text: clip(oneLine(mask(row.display)), MAX_PROMPT) }))
+    .sort((a, b) => b.timestamp - a.timestamp)
+    .map((row) => ({ project: basename(row.project ?? ''), on: day(row.timestamp), text: clip(oneLine(mask(row.display)), MAX_PROMPT) }))
 
-  const questions = kept.filter((row) => QUESTION.test(row.text))
   const others = kept.filter((row) => !QUESTION.test(row.text))
-  const left = Math.max(0, MAX_PROMPTS - questions.reduce((sum, row) => sum + row.text.length, 0))
-  const room = Math.floor(left / MAX_PROMPT)
-  const step = Math.max(1, others.length / Math.max(1, room))
-  const sampled = Array.from({ length: Math.min(room, others.length) }, (_, index) => others[Math.floor(index * step)])
-  return { questions, sampled, kept: kept.length, projects: [...usage].sort((a, b) => b[1] - a[1]).map(([path]) => path) }
+  const recent = newest(others, MAX_RECENT)
+  return {
+    questions: newest(kept.filter((row) => QUESTION.test(row.text)), MAX_QUESTIONS),
+    recent,
+    older: spread(others.slice(recent.length), MAX_OLDER),
+    projects: [...usage].sort((a, b) => b[1] - a[1]).map(([path]) => path),
+  }
 }
 
-const list = (rows) => rows.map((row) => `- [${row.project}] ${row.text}`).join('\n')
+const list = (rows) => rows.map((row) => `- ${row.on} [${row.project}] ${row.text}`).join('\n')
 
 const data = dataFolder()
 const token = tokenIn(data)
@@ -111,7 +138,8 @@ if (token) {
   }
   if (signedOut) forgetToken(data)
   else {
-    known = answer.known
+    // A former API gave the text alone.
+    known = answer.known.map((line) => (typeof line === 'string' ? { text: line, seenOn: '' } : line))
     addRefused(data, answer.removed)
     if (answer.removed.length) await ask('DELETE', '/v1/connection/removed', { token })
   }
@@ -119,7 +147,7 @@ if (token) {
 
 const now = Date.now()
 const all = memories()
-const about = once(all.filter((row) => row.type === 'user'), (row) => row.body)
+const about = once(all.filter((row) => row.type === 'user'), (row) => row.body).sort((a, b) => b.modified - a.modified)
 const work = once(all.filter((row) => row.type === 'project' && now - row.modified < MEMORY_DAYS * DAY), (row) => row.description)
   .sort((a, b) => b.modified - a.modified)
   .slice(0, MAX_PROJECT_MEMORIES)
@@ -128,26 +156,29 @@ const habits = once(all.filter((row) => row.type === 'feedback'), (row) => row.d
   .slice(0, MAX_FEEDBACK_MEMORIES)
 const typed = prompts(now - PROMPT_DAYS * DAY)
 
-const describe = (rows) => list(rows.map((row) => ({ project: row.project, text: clip(mask(row.description), MAX_DESCRIPTION) })))
+const describe = (rows) => list(rows.map((row) => ({ project: row.project, on: day(row.modified), text: clip(mask(row.description), MAX_DESCRIPTION) })))
+const global = join(CLAUDE, 'CLAUDE.md')
 
 const sections = [
-  ['CLAUDE.md global', mask(read(join(CLAUDE, 'CLAUDE.md')).trim())],
+  [`CLAUDE.md global, modifié le ${modifiedOn(global)}`, mask(read(global).trim())],
   [
     'CLAUDE.md des projets les plus utilisés',
     typed.projects
       .slice(0, MAX_PROJECTS)
-      .map((path) => [basename(path), read(join(path, 'CLAUDE.md'))])
-      .filter(([, text]) => text)
-      .map(([name, text]) => `### ${name}\n${clip(mask(text.trim()), MAX_CLAUDE_MD)}`)
+      .map((path) => [basename(path), join(path, 'CLAUDE.md')])
+      .filter(([, file]) => read(file))
+      .map(([name, file]) => `### ${name}, modifié le ${modifiedOn(file)}\n${clip(mask(read(file).trim()), MAX_CLAUDE_MD)}`)
       .join('\n\n'),
   ],
-  ['Mémoires sur la personne', about.map((row) => `### ${row.project}\n${clip(mask(row.body), MAX_USER_MEMORY)}`).join('\n\n')],
+  ['Mémoires sur la personne', about.map((row) => `### ${day(row.modified)} ${row.project}\n${clip(mask(row.body), MAX_USER_MEMORY)}`).join('\n\n')],
   [`Mémoires de projet, ${MEMORY_DAYS} derniers jours`, describe(work)],
   ['Mémoires sur sa façon de travailler', describe(habits)],
-  [`Ses questions, ${PROMPT_DAYS} derniers jours`, list(typed.questions)],
-  [`Ses autres demandes, ${PROMPT_DAYS} derniers jours, échantillon`, list(typed.sampled)],
-  ['Déjà chez Deepn', known.map((line) => `- ${line}`).join('\n')],
+  ['Ses questions les plus récentes', list(typed.questions)],
+  ['Ses demandes les plus récentes', list(typed.recent)],
+  [`Ses demandes plus anciennes, jusqu'à ${PROMPT_DAYS} jours, échantillon`, list(typed.older)],
+  ['Déjà chez Deepn, avec le dernier jour où elles ont été vues', known.map((line) => `- ${line.seenOn} ${line.text}`).join('\n')],
   ['Refusé par la personne', refusedIn(data).map((line) => `- ${line}`).join('\n')],
 ]
 
-console.log(sections.filter(([, text]) => text).map(([title, text]) => `## ${title}\n${text}`).join('\n\n'))
+const opening = `Aujourd'hui : ${day(now)}. Chaque élément commence par le jour où il a été écrit, le plus récent d'abord.`
+console.log([opening, ...sections.filter(([, text]) => text).map(([title, text]) => `## ${title}\n${text}`)].join('\n\n'))

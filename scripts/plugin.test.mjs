@@ -92,6 +92,19 @@ describe('collect', () => {
     for (const hidden of ['lea@exemple.fr', '06 12 34 56 78', 'https://exemple.fr', 'hunter2', 'sk-abcdefgh', 'voici la clé']) assert.ok(!out.includes(hidden), hidden)
   })
 
+  it('dates everything, and puts what is burning first', async () => {
+    const today = new Date().toLocaleDateString('sv-SE')
+    history([
+      { display: `trois jours avant ${LONG}`, timestamp: Date.now() - 3 * 86_400_000 },
+      { display: `aujourd'hui ${LONG}`, timestamp: Date.now() },
+      { display: `la veille ${LONG}`, timestamp: Date.now() - 86_400_000 },
+    ])
+    const { out } = await run('collect.mjs')
+    assert.ok(out.startsWith(`Aujourd'hui : ${today}.`))
+    assert.match(out, new RegExp(`- ${today} \\[projet\\] aujourd'hui`))
+    assert.ok(out.indexOf("aujourd'hui et") < out.indexOf('la veille') && out.indexOf('la veille') < out.indexOf('trois jours avant'))
+  })
+
   it('leaves a long history at the same size', async () => {
     history(Array.from({ length: 5000 }, (_, index) => ({ display: `demande ${index} ${LONG}` })))
     assert.ok((await run('collect.mjs')).out.length < 40_000)
@@ -114,9 +127,9 @@ describe('collect', () => {
   it('lists what Deepn has, notes what was taken off on this Mac, and has Deepn forget it', async () => {
     mkdirSync(data, { recursive: true })
     writeFileSync(join(data, 'token'), 'jeton')
-    answers['GET /v1/connection/facts'] = { json: { known: ['Déjà là.'], removed: ['Plus jamais.'] } }
+    answers['GET /v1/connection/facts'] = { json: { known: [{ text: 'Déjà là.', seenOn: '2026-11-02' }], removed: ['Plus jamais.'] } }
     const { out } = await run('collect.mjs')
-    assert.match(out, /Déjà chez Deepn\n- Déjà là\./)
+    assert.match(out, /Déjà chez Deepn[^\n]*\n- 2026-11-02 Déjà là\./)
     assert.match(out, /Refusé par la personne\n- Plus jamais\./)
     assert.deepEqual(JSON.parse(readFileSync(join(data, 'refused.json'), 'utf8')), ['Plus jamais.'])
     assert.deepEqual(calls.map(({ method, path, token }) => [method, path, token]), [
@@ -164,6 +177,14 @@ describe('send', () => {
     assert.deepEqual(calls[0].body, { code: 'ABCD-EFGH' })
     assert.equal(calls[1].token, 'Bearer jeton')
     assert.deepEqual(calls[1].body, { facts: FACTS })
+  })
+
+  it('carries the last day each line was seen', async () => {
+    mkdirSync(data, { recursive: true })
+    writeFileSync(join(data, 'token'), 'jeton')
+    await run('send.mjs', { input: 'essentiel 2026-11-05: Récent.\nsensible: Sans jour.\nrefusé 2026-11-01: Non.\n' })
+    assert.deepEqual(calls[0].body.facts, [{ text: 'Récent.', sensitive: false, seenOn: '2026-11-05' }, { text: 'Sans jour.', sensitive: true }])
+    assert.deepEqual(JSON.parse(readFileSync(join(data, 'refused.json'), 'utf8')), ['Non.'])
   })
 
   it('says when the code is wrong', async () => {
