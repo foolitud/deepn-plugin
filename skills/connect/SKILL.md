@@ -8,7 +8,7 @@ argument-hint: "[code de connexion]"
 
 Deepn fait des podcasts qui expliquent des sujets complexes. Tu prépares ce que ses auteurs doivent savoir de cette personne pour bien lui expliquer les choses.
 
-Argument reçu : `$ARGUMENTS`. Le mot `semaine` veut dire que personne n'est devant l'écran : fais seulement les étapes 2, 3, 4 et 7. Tout autre argument est son code de connexion : garde-le pour l'étape 6.
+Argument reçu : `$ARGUMENTS`. Le mot `semaine` veut dire que personne n'est devant l'écran : fais seulement les étapes 2, 3, 4 et 7. Tout autre argument est son code de connexion, ou l'adresse de son connecteur Deepn : garde-le tel quel pour l'étape 6.
 
 1. Dis cette phrase telle quelle :
 « Je prépare ce que Deepn doit savoir de vous, et vous retirez ce que vous ne voulez pas partager. »
@@ -43,7 +43,7 @@ Les deux listes ne parlent que de cette personne : dis la chose sans son montant
 5. Termine par ces deux phrases, puis attends sa réponse :
 « Ensuite, chaque semaine, j'enverrai seulement ce qui est nouveau, hors des lignes peut-être sensibles. Y a-t-il des lignes que vous ne voulez pas partager ? Donnez leurs numéros, sinon répondez ok et tout part. »
 
-6. Envoie les lignes avec cette commande, une par ligne, sans numéro ni source : `essentiel` pour les deux premières listes, `sensible` pour la troisième, suivi du jour au format `2026-11-05` pour une ligne datée, et de rien pour une ligne en général ; `refusé` pour celles qu'elle a retirées. Ajoute `--code CODE` si tu as son code.
+6. Envoie les lignes avec cette commande, une par ligne, sans numéro ni source : `essentiel` pour les deux premières listes, `sensible` pour la troisième, suivi du jour au format `2026-11-05` pour une ligne datée, et de rien pour une ligne en général ; `refusé` pour celles qu'elle a retirées. Ajoute `--code` suivi de son code ou de son adresse si tu en as un.
 
 ```bash
 node "${CLAUDE_PLUGIN_ROOT}/scripts/send.mjs" --data "${CLAUDE_PLUGIN_DATA}" <<'EOF'
@@ -54,6 +54,6 @@ refusé: …
 EOF
 ```
 
-Répète telle quelle la phrase du script, et rien d'autre. Si elle demande un code, attends-le et relance la même commande avec `--code`.
+Répète telle quelle la phrase du script, et rien d'autre. Si elle demande un code, attends le texte ou le code de la personne et relance la même commande avec `--code`.
 
 7. En mode `semaine` : envoie avec la même commande les nouvelles lignes des deux premières listes, cinq au plus, et celles déjà chez Deepn qui reviennent. Les lignes peut-être sensibles attendent que la personne les voie. S'il n'y a aucune ligne, ne lance rien.

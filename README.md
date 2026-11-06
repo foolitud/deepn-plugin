@@ -4,13 +4,13 @@ Deepn fait des podcasts qui expliquent des sujets complexes. Ce plugin laisse vo
 
 ## Installer et connecter
 
-Dans Deepn, ouvrez Vous, puis Connect, et touchez « Obtenir un code ». Collez ensuite dans le Terminal de votre Mac la commande que l'appli vous donne, qui ressemble à ceci :
+Dans Deepn, ouvrez Vous, puis Connect, et touchez « Ajouter à Claude ». Collez le texte qui en sort dans Claude Code, sur votre ordinateur : Claude installe ce plugin, puis vous demande d'ouvrir une nouvelle session et d'y taper `/deepn:connect` suivi de l'adresse de votre connecteur. Ça marche aussi dans l'onglet Code de l'appli Claude.
+
+À la main :
 
 ```bash
-claude plugin install deepn --marketplace foolitud/deepn-plugin && claude "/deepn:connect ABCD-EFGH"
+claude plugin install deepn --marketplace foolitud/deepn-plugin
 ```
-
-Elle installe le plugin, ouvre Claude Code et lance la connexion. Le plugin marche aussi dans l'onglet Code de l'appli Claude sur Mac : tapez-y `/deepn:connect` suivi du code.
 
 Il faut Claude Code 2.1.292 ou plus récent.
 

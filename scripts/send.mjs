@@ -6,8 +6,8 @@ import { addRefused, ask, dataFolder, forgetToken, noteSent, refusedIn, saveToke
 
 const MOST_LINES = 40
 const LONGEST_LINE = 400
-const NEED_CODE = 'Dans Deepn, ouvrez Vous, puis Connect, et touchez « Obtenir un code ». Donnez-moi ce code.'
-const WRONG_CODE = 'Ce code ne va pas. Demandez-en un autre dans Deepn, sous Connect.'
+const NEED_CODE = 'Dans Deepn, ouvrez Vous, puis Connect, et touchez « Ajouter à Claude ». Collez-moi le texte qui en sort.'
+const WRONG_CODE = 'Ce code ne va pas. Dans Deepn, sous Connect, touchez « Ajouter à Claude » pour en avoir un nouveau.'
 
 let input = ''
 for await (const chunk of process.stdin) input += chunk
@@ -26,6 +26,8 @@ addRefused(data, refused)
 
 const at = process.argv.indexOf('--code')
 const code = at > 0 ? process.argv[at + 1] : ''
+// The address of a Deepn connector already holds a connection: it is kept as it is, where a short code is traded.
+const inAddress = code.match(/\/mcp\/([\w-]{20,})\/?$/)?.[1]
 
 const stop = (sentence) => {
   console.log(sentence)
@@ -33,6 +35,10 @@ const stop = (sentence) => {
 }
 
 let token = tokenIn(data)
+if (!token && inAddress) {
+  token = inAddress
+  saveToken(data, token)
+}
 if (!token) {
   if (!code) stop(NEED_CODE)
   const { answer, failure } = await ask('POST', '/v1/connections', { body: { code } })

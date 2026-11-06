@@ -165,7 +165,7 @@ describe('send', () => {
 
   it('asks for a code, sends nothing, and keeps the refusal', async () => {
     const { out } = await run('send.mjs', { input })
-    assert.match(out, /Obtenir un code/)
+    assert.match(out, /Ajouter à Claude/)
     assert.deepEqual(calls, [])
     assert.deepEqual(JSON.parse(readFileSync(join(data, 'refused.json'), 'utf8')), ['Cherche un poste.'])
   })
@@ -187,6 +187,13 @@ describe('send', () => {
     await run('send.mjs', { input: 'essentiel 2026-11-05: Récent.\nsensible: Sans jour.\nrefusé 2026-11-01: Non.\n' })
     assert.deepEqual(calls[0].body.facts, [{ text: 'Récent.', sensitive: false, seenOn: '2026-11-05' }, { text: 'Sans jour.', sensitive: true }])
     assert.deepEqual(JSON.parse(readFileSync(join(data, 'refused.json'), 'utf8')), ['Non.'])
+  })
+
+  it('keeps the connection a connector address holds, without trading anything', async () => {
+    const { out } = await run('send.mjs', { input: 'essentiel: Découvre les index.\n', args: ['--code', 'https://deepn.exemple/mcp/aBcDeFgHiJkLmNoPqRsTuVwXyZ012345-_'] })
+    assert.match(out, /Une ligne envoyée/)
+    assert.equal(readFileSync(join(data, 'token'), 'utf8'), 'aBcDeFgHiJkLmNoPqRsTuVwXyZ012345-_')
+    assert.deepEqual(calls.map(({ method, path, token }) => [method, path, token]), [['POST', '/v1/connection/facts', 'Bearer aBcDeFgHiJkLmNoPqRsTuVwXyZ012345-_']])
   })
 
   it('says when the code is wrong', async () => {
@@ -216,7 +223,7 @@ describe('send', () => {
     mkdirSync(data, { recursive: true })
     writeFileSync(join(data, 'token'), 'jeton')
     answers['POST /v1/connection/facts'] = { status: 401 }
-    assert.match((await run('send.mjs', { input })).out, /Obtenir un code/)
+    assert.match((await run('send.mjs', { input })).out, /Ajouter à Claude/)
     assert.ok(!existsSync(join(data, 'token')))
   })
 
