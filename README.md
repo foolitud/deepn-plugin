@@ -1,45 +1,41 @@
-# deepn-plugin
+# Deepn pour Claude Code
 
-Le plugin Claude Code qui dit à Deepn qui est la personne, pour que ses Épisodes partent de là où elle en est ([ADR 0017](../../docs/adr/0017-deepn-le-claude-de-la-personne-ecrit-dans-deepn.md)).
+Deepn fait des podcasts qui expliquent des sujets complexes. Ce plugin laisse votre Claude dire à Deepn qui vous êtes, pour que vos Épisodes partent de là où vous en êtes. Vous voyez chaque ligne avant qu'elle parte, et vous retirez ce que vous voulez.
+
+## Installer et connecter
+
+Dans Deepn, ouvrez Vous, puis Connect, et touchez « Obtenir un code ». Collez ensuite dans le Terminal de votre Mac la commande que l'appli vous donne, qui ressemble à ceci :
+
+```bash
+claude plugin install deepn --marketplace foolitud/deepn-plugin && claude "/deepn:connect ABCD-EFGH"
+```
+
+Elle installe le plugin, ouvre Claude Code et lance la connexion. Le plugin marche aussi dans l'onglet Code de l'appli Claude sur Mac : tapez-y `/deepn:connect` suivi du code.
+
+Il faut Claude Code 2.1.292 ou plus récent.
 
 ## Ce qui se passe
 
-1. Dans Deepn, sous Vous puis Connect, la personne touche « Obtenir un code ».
-2. Dans Claude Code, elle lance `/deepn:connect` avec ce code. Claude dit une phrase, lit ce que Claude Code garde sur elle et lui montre deux listes : l'essentiel, et ce qui est peut-être sensible.
-3. Elle donne les numéros à retirer, ou répond ok. Tout le reste part, et s'affiche dans Deepn, où chaque ligne se retire.
-4. Ensuite, au début d'une session et au plus une fois par semaine, un Claude sans personne devant l'écran envoie ce qui est nouveau dans l'essentiel. Les lignes peut-être sensibles attendent le prochain `/deepn:connect`.
+1. Claude lit ce que Claude Code garde sur vous, sur votre Mac.
+2. Il vous montre trois listes : ce qui vous décrit en général, ce qui vous occupe en ce moment (daté, le plus récent d'abord), et ce qui est peut-être sensible.
+3. Vous donnez les numéros à retirer, ou vous répondez ok. Tout le reste part, et s'affiche dans Deepn, où chaque ligne se retire.
+4. Ensuite, au début d'une session et au plus une fois par semaine, Claude envoie seul ce qui est nouveau, hors des lignes peut-être sensibles, qui attendent votre prochain `/deepn:connect`.
+
+Chaque passage se fait sur votre forfait Claude.
 
 ## Ce que Claude lit
 
-`scripts/collect.mjs` choisit et plafonne, à environ 50 000 caractères : le `CLAUDE.md` global et ceux des projets les plus utilisés, les mémoires sur la personne, les descriptions des mémoires de projet et de travail, et ses prompts longs des 30 derniers jours, avec adresses, téléphones, liens et ce qui ressemble à une clé masqués. Ce masquage repère des formes connues, et une clé peut y échapper.
-
-Ce qui décrit la personne en général (`CLAUDE.md`, mémoires sur elle) vient sans jour. Le reste porte son jour, le plus récent d'abord : les dernières questions et demandes en entier, puis un échantillon du reste du mois. Claude montre trois listes : en général, en ce moment, et peut-être sensible, et date chaque ligne du moment du dernier jour où il la voit.
+`scripts/collect.mjs` choisit et plafonne, à environ 50 000 caractères : le `CLAUDE.md` global et ceux des projets les plus utilisés, les mémoires sur vous, les descriptions des mémoires de projet et de travail, et vos prompts longs des 30 derniers jours. Les adresses, téléphones, liens et ce qui ressemble à une clé sont masqués. Ce masquage repère des formes connues, et une clé peut y échapper.
 
 Il ne lit jamais les transcripts, les contenus collés, les réglages, ni les mémoires `reference`, qui gardent les comptes et les identifiants.
 
-## Essayer
+## Ce qui reste sur votre Mac
 
-Sans installer, avec l'API locale de `deepn-api` :
+Dans `~/.claude/plugins/data/` : le jeton de la connexion, qui ne sait qu'ajouter des lignes, les lignes refusées et la date du dernier envoi. Claude Code efface ce dossier quand vous désinstallez le plugin, mais ce qui est déjà chez Deepn y reste : « Tout effacer » se trouve dans l'appli, sous Connect.
 
-```bash
-DEEPN_API_URL=http://localhost:8787 claude --plugin-dir apps/deepn-plugin
-```
-
-Pour l'installer, depuis la racine du repo :
+## Développer
 
 ```bash
-claude plugin marketplace add ./apps/deepn-plugin
-claude plugin install deepn@deepn
+npm test
+DEEPN_API_URL=http://localhost:8787 claude --plugin-dir .
 ```
-
-Le repo est privé : pour que d'autres l'installent, le plugin devra vivre dans un repo public.
-
-## Tester
-
-```bash
-pnpm --filter deepn-plugin test
-```
-
-## Où sont ses affaires
-
-Dans `~/.claude/plugins/data/` : le jeton de la connexion, les lignes refusées et la date du dernier envoi. Claude Code efface ce dossier à la désinstallation, mais ce qui est déjà chez Deepn y reste : « Tout effacer » se trouve dans l'appli, sous Connect.

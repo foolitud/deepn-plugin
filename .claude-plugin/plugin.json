@@ -2,5 +2,9 @@
   "name": "deepn",
   "version": "0.3.0",
   "description": "Prépare ce que Deepn doit savoir de vous, et vous retirez ce que vous ne voulez pas partager.",
-  "author": { "name": "lo" }
+  "author": {
+    "name": "lo"
+  },
+  "homepage": "https://github.com/foolitud/deepn-plugin",
+  "repository": "https://github.com/foolitud/deepn-plugin"
 }
