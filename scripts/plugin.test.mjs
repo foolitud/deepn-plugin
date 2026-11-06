@@ -165,7 +165,7 @@ describe('send', () => {
 
   it('asks for a code, sends nothing, and keeps the refusal', async () => {
     const { out } = await run('send.mjs', { input })
-    assert.match(out, /Ajouter à Claude/)
+    assert.match(out, /votre code perso/)
     assert.deepEqual(calls, [])
     assert.deepEqual(JSON.parse(readFileSync(join(data, 'refused.json'), 'utf8')), ['Cherche un poste.'])
   })
@@ -223,7 +223,7 @@ describe('send', () => {
     mkdirSync(data, { recursive: true })
     writeFileSync(join(data, 'token'), 'jeton')
     answers['POST /v1/connection/facts'] = { status: 401 }
-    assert.match((await run('send.mjs', { input })).out, /Ajouter à Claude/)
+    assert.match((await run('send.mjs', { input })).out, /votre code perso/)
     assert.ok(!existsSync(join(data, 'token')))
   })
 

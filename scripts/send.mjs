@@ -6,8 +6,8 @@ import { addRefused, ask, dataFolder, forgetToken, noteSent, refusedIn, saveToke
 
 const MOST_LINES = 40
 const LONGEST_LINE = 400
-const NEED_CODE = 'Dans Deepn, ouvrez Vous, puis Connect, et touchez « Ajouter à Claude ». Collez-moi le texte qui en sort.'
-const WRONG_CODE = 'Ce code ne va pas. Dans Deepn, sous Connect, touchez « Ajouter à Claude » pour en avoir un nouveau.'
+const NEED_CODE = 'Donnez-moi votre code perso : il est dans Deepn, sous Vous, puis Connect.'
+const WRONG_CODE = 'Ce code ne va pas. Rouvrez Connect dans Deepn, sous Vous : un nouveau code vous y attend.'
 
 let input = ''
 for await (const chunk of process.stdin) input += chunk
