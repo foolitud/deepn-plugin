@@ -2,11 +2,10 @@
 // Sends to Deepn the lines the person agreed to. It reads one line per fact from stdin, each after `essentiel`, `sensible` or
 // `refusé`, then the last day it was seen and a colon, because Claude Code stops a command holding JSON. What it prints is said
 // to the person as it is. The token never goes through Claude, which only sees the short code.
-import { addRefused, ask, dataFolder, forgetToken, noteSent, refusedIn, saveToken, tokenIn } from './deepn.mjs'
+import { addRefused, ask, dataFolder, forgetToken, NEED_CODE, noteSent, refusedIn, saveToken, tokenIn } from './deepn.mjs'
 
 const MOST_LINES = 40
 const LONGEST_LINE = 400
-const NEED_CODE = 'Donnez-moi votre code perso : il est dans Deepn, sous Vous, puis Connect.'
 const WRONG_CODE = 'Ce code ne va pas. Rouvrez Connect dans Deepn, sous Vous : un nouveau code vous y attend.'
 
 let input = ''

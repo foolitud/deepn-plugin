@@ -236,6 +236,27 @@ describe('send', () => {
   })
 })
 
+describe('link', () => {
+  it('asks for the code before anything is read, and keeps the connection it trades it for', async () => {
+    assert.match((await run('link.mjs')).out, /votre code perso/)
+    assert.deepEqual(calls, [])
+    answers['POST /v1/connections'] = { json: { token: 'jeton' } }
+    assert.equal((await run('link.mjs', { args: ['--code', 'ABCD-EFGH'] })).out.trim(), 'Connecté à Deepn.')
+    assert.deepEqual(calls[0].body, { code: 'ABCD-EFGH' })
+    assert.equal(readFileSync(join(data, 'token'), 'utf8'), 'jeton')
+    assert.equal((await run('link.mjs')).out.trim(), 'Connecté à Deepn.')
+    assert.equal(calls.length, 1)
+  })
+
+  it('says when the code is wrong, and when Deepn cannot answer', async () => {
+    answers['POST /v1/connections'] = { status: 401 }
+    assert.match((await run('link.mjs', { args: ['--code', 'FAUX'] })).out, /Ce code ne va pas/)
+    answers['POST /v1/connections'] = { status: 500 }
+    assert.equal((await run('link.mjs', { args: ['--code', 'ABCD-EFGH'] })).out.trim(), "Ça n'a pas marché, nous sommes prévenus.")
+    assert.ok(!existsSync(join(data, 'token')))
+  })
+})
+
 describe('weekly', () => {
   /** A `claude` that only writes down how it was called. */
   function fakeClaude() {

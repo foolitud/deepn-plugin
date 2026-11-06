@@ -4,7 +4,7 @@ Deepn fait des podcasts qui expliquent des sujets complexes. Ce plugin laisse vo
 
 ## Installer et connecter
 
-Dans Deepn, ouvrez Vous, puis Connect : collez le message affiché dans Claude Code, sur votre ordinateur. Claude installe ce plugin, vous demande de taper `/reload-plugins` puis `/deepn:connect`, et vous demande votre code perso, affiché sous le message. Ça marche aussi dans l'onglet Code de l'appli Claude.
+Dans Deepn, ouvrez Vous, puis Connect : collez le message affiché dans Claude Code, sur votre ordinateur. Claude installe ce plugin et vous demande de taper `/reload-plugins` puis `/deepn:connect`. Il vous demande alors votre code perso, affiché sous le message, avant de lire quoi que ce soit. Ça marche aussi dans l'onglet Code de l'appli Claude.
 
 À la main :
 
