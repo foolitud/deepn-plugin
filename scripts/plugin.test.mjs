@@ -101,6 +101,8 @@ describe('collect', () => {
     ])
     const { out } = await run('collect.mjs')
     assert.ok(out.startsWith(`Aujourd'hui : ${today}.`))
+    memory('-x-a', 'qui.md', 'user', 'Qui', 'Fondatrice.')
+    assert.match((await run('collect.mjs')).out, /## En général : mémoires sur la personne\n### -x-a\nFondatrice\./)
     assert.match(out, new RegExp(`- ${today} \\[projet\\] aujourd'hui`))
     assert.ok(out.indexOf("aujourd'hui et") < out.indexOf('la veille') && out.indexOf('la veille') < out.indexOf('trois jours avant'))
   })

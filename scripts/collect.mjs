@@ -47,7 +47,6 @@ const oneLine = (text) => text.replace(/\s+/g, ' ').trim()
 const read = (path) => (existsSync(path) ? readFileSync(path, 'utf8') : '')
 /** The day, on this Mac's clock: what Claude reads, compares and sends back. */
 const day = (ms) => new Date(ms).toLocaleDateString('sv-SE')
-const modifiedOn = (path) => (existsSync(path) ? day(statSync(path).mtimeMs) : '')
 
 // The words of someone who does not know yet, which requests like « est-ce que tu peux » would drown.
 const QUESTION = /c'est quoi|ça veut dire|ca veut dire|je (ne )?comprends pas|comment (ça|ca) (marche|fonctionne)|pourquoi|explique|quelle différence|la différence|je (ne )?sais pas|what is|what does|how does|why |explain|don't understand|difference between/i
@@ -139,7 +138,7 @@ if (token) {
   if (signedOut) forgetToken(data)
   else {
     // A former API gave the text alone.
-    known = answer.known.map((line) => (typeof line === 'string' ? { text: line, seenOn: '' } : line))
+    known = answer.known.map((line) => (typeof line === 'string' ? { text: line, seenOn: null } : line))
     addRefused(data, answer.removed)
     if (answer.removed.length) await ask('DELETE', '/v1/connection/removed', { token })
   }
@@ -157,28 +156,28 @@ const habits = once(all.filter((row) => row.type === 'feedback'), (row) => row.d
 const typed = prompts(now - PROMPT_DAYS * DAY)
 
 const describe = (rows) => list(rows.map((row) => ({ project: row.project, on: day(row.modified), text: clip(mask(row.description), MAX_DESCRIPTION) })))
-const global = join(CLAUDE, 'CLAUDE.md')
 
+// What describes the person in general has no day: a file touched yesterday does not make a path or a taste news.
 const sections = [
-  [`CLAUDE.md global, modifié le ${modifiedOn(global)}`, mask(read(global).trim())],
+  ['En général : CLAUDE.md global', mask(read(join(CLAUDE, 'CLAUDE.md')).trim())],
   [
-    'CLAUDE.md des projets les plus utilisés',
+    'En général : CLAUDE.md des projets les plus utilisés',
     typed.projects
       .slice(0, MAX_PROJECTS)
-      .map((path) => [basename(path), join(path, 'CLAUDE.md')])
-      .filter(([, file]) => read(file))
-      .map(([name, file]) => `### ${name}, modifié le ${modifiedOn(file)}\n${clip(mask(read(file).trim()), MAX_CLAUDE_MD)}`)
+      .map((path) => [basename(path), read(join(path, 'CLAUDE.md'))])
+      .filter(([, text]) => text)
+      .map(([name, text]) => `### ${name}\n${clip(mask(text.trim()), MAX_CLAUDE_MD)}`)
       .join('\n\n'),
   ],
-  ['Mémoires sur la personne', about.map((row) => `### ${day(row.modified)} ${row.project}\n${clip(mask(row.body), MAX_USER_MEMORY)}`).join('\n\n')],
+  ['En général : mémoires sur la personne', about.map((row) => `### ${row.project}\n${clip(mask(row.body), MAX_USER_MEMORY)}`).join('\n\n')],
   [`Mémoires de projet, ${MEMORY_DAYS} derniers jours`, describe(work)],
   ['Mémoires sur sa façon de travailler', describe(habits)],
   ['Ses questions les plus récentes', list(typed.questions)],
   ['Ses demandes les plus récentes', list(typed.recent)],
   [`Ses demandes plus anciennes, jusqu'à ${PROMPT_DAYS} jours, échantillon`, list(typed.older)],
-  ['Déjà chez Deepn, avec le dernier jour où elles ont été vues', known.map((line) => `- ${line.seenOn} ${line.text}`).join('\n')],
+  ['Déjà chez Deepn, avec le dernier jour où elles ont été vues', known.map((line) => `- ${line.seenOn ?? 'en général'} ${line.text}`).join('\n')],
   ['Refusé par la personne', refusedIn(data).map((line) => `- ${line}`).join('\n')],
 ]
 
-const opening = `Aujourd'hui : ${day(now)}. Chaque élément commence par le jour où il a été écrit, le plus récent d'abord.`
+const opening = `Aujourd'hui : ${day(now)}. Ce qui vaut en général vient d'abord, sans jour. Le reste commence par le jour où il a été écrit, le plus récent d'abord.`
 console.log([opening, ...sections.filter(([, text]) => text).map(([title, text]) => `## ${title}\n${text}`)].join('\n\n'))

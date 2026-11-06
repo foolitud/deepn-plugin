@@ -13,7 +13,7 @@ Le plugin Claude Code qui dit à Deepn qui est la personne, pour que ses Épisod
 
 `scripts/collect.mjs` choisit et plafonne, à environ 50 000 caractères : le `CLAUDE.md` global et ceux des projets les plus utilisés, les mémoires sur la personne, les descriptions des mémoires de projet et de travail, et ses prompts longs des 30 derniers jours, avec adresses, téléphones, liens et ce qui ressemble à une clé masqués. Ce masquage repère des formes connues, et une clé peut y échapper.
 
-Tout y porte son jour, et ce qui est récent passe en premier : les dernières questions et demandes en entier, puis un échantillon du reste du mois. Claude date chaque ligne du dernier jour où il la voit.
+Ce qui décrit la personne en général (`CLAUDE.md`, mémoires sur elle) vient sans jour. Le reste porte son jour, le plus récent d'abord : les dernières questions et demandes en entier, puis un échantillon du reste du mois. Claude montre trois listes : en général, en ce moment, et peut-être sensible, et date chaque ligne du moment du dernier jour où il la voit.
 
 Il ne lit jamais les transcripts, les contenus collés, les réglages, ni les mémoires `reference`, qui gardent les comptes et les identifiants.
 
