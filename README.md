@@ -19,9 +19,19 @@ Il faut Claude Code 2.1.292 ou plus récent.
 1. Claude lit ce que Claude Code garde sur vous, sur votre Mac.
 2. Il vous montre trois listes : ce qui vous décrit en général, ce qui vous occupe en ce moment (daté, le plus récent d'abord), et ce qui est peut-être sensible.
 3. Vous donnez les numéros à retirer, ou vous répondez ok. Tout le reste part, et s'affiche dans Deepn, où chaque ligne se retire.
-4. Ensuite, au début d'une session et au plus une fois par semaine, Claude envoie seul ce qui est nouveau, hors des lignes peut-être sensibles, qui attendent votre prochain `/deepn:connect`.
+4. Ensuite, au début d'une session et au plus une fois par jour, Claude envoie seul ce qui est nouveau, hors des lignes peut-être sensibles, qui attendent votre prochain `/deepn:connect`.
 
 Chaque passage se fait sur votre forfait Claude.
+
+## Mettre à jour
+
+Quand une nouvelle version sort, Deepn le dit sous Vous, puis Connect, avec un message à coller dans Claude Code. À la main :
+
+```bash
+claude plugin update deepn@deepn
+```
+
+Puis relancez Claude Code. Pour recevoir les versions suivantes sans rien faire, activez une fois la mise à jour automatique : `/plugin`, Marketplaces, deepn, Enable auto-update.
 
 ## Ce que Claude lit
 
@@ -31,7 +41,7 @@ Il ne lit jamais les transcripts, les contenus collés, les réglages, ni les m�
 
 ## Ce qui reste sur votre Mac
 
-Dans `~/.claude/plugins/data/` : le jeton de la connexion, qui ne sait qu'ajouter des lignes, les lignes refusées et la date du dernier envoi. Claude Code efface ce dossier quand vous désinstallez le plugin, mais ce qui est déjà chez Deepn y reste : « Tout effacer » se trouve dans l'appli, sous Connect.
+Dans `~/.claude/plugins/data/` : le jeton de la connexion, qui ne sait qu'ajouter des lignes, les lignes refusées, la date du dernier envoi et la version du plugin que Deepn connaît. Claude Code efface ce dossier quand vous désinstallez le plugin, mais ce qui est déjà chez Deepn y reste : « Tout effacer » se trouve dans l'appli, sous Connect.
 
 ## Développer
 

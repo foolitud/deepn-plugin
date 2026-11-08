@@ -8,13 +8,14 @@ import { join } from 'node:path'
 import { after, before, beforeEach, describe, it } from 'node:test'
 
 const SCRIPTS = import.meta.dirname
+const published = JSON.parse(readFileSync(join(SCRIPTS, '..', '.claude-plugin', 'plugin.json'), 'utf8')).version
 const OLD = Date.now() - 200 * 86_400_000
 
 const server = createServer((request, response) => {
   let body = ''
   request.on('data', (chunk) => (body += chunk))
   request.on('end', () => {
-    const call = { method: request.method, path: request.url, token: request.headers.authorization, body: body ? JSON.parse(body) : undefined }
+    const call = { method: request.method, path: request.url, token: request.headers.authorization, version: request.headers['x-deepn-plugin'], body: body ? JSON.parse(body) : undefined }
     calls.push(call)
     const { status = 200, json = { ok: true } } = answers[`${call.method} ${call.path}`] ?? {}
     response.writeHead(status, { 'content-type': 'application/json' }).end(JSON.stringify(json))
@@ -257,12 +258,29 @@ describe('link', () => {
   })
 })
 
-describe('weekly', () => {
+describe('version', () => {
+
+  it('gives its version on each call, so that the app can say when a newer one is out', async () => {
+    mkdirSync(data, { recursive: true })
+    writeFileSync(join(data, 'token'), 'jeton')
+    await run('collect.mjs')
+    assert.ok(calls.length > 0)
+    assert.ok(calls.every((call) => call.version === published))
+  })
+
+  // Only in Deepn's own repo: the public one holds the plugin alone.
+  const facts = join(SCRIPTS, '..', '..', 'deepn-api', 'src', 'facts.ts')
+  it('is the version the API calls the latest', { skip: !existsSync(facts) }, () => {
+    assert.match(readFileSync(facts, 'utf8'), new RegExp(`PLUGIN_VERSION = '${published.replaceAll('.', '\\.')}'`))
+  })
+})
+
+describe('daily', () => {
   /** A `claude` that only writes down how it was called. */
   function fakeClaude() {
     const bin = join(home, 'bin')
     mkdirSync(bin, { recursive: true })
-    writeFileSync(join(bin, 'claude'), `#!/bin/sh\necho "$DEEPN_WEEKLY $@" > "${join(home, 'called')}"\n`)
+    writeFileSync(join(bin, 'claude'), `#!/bin/sh\necho "$DEEPN_DAILY $@" > "${join(home, 'called')}"\n`)
     chmodSync(join(bin, 'claude'), 0o755)
     return { PATH: `${bin}:${process.env.PATH}`, CLAUDE_PLUGIN_ROOT: '/le/plugin' }
   }
@@ -281,27 +299,37 @@ describe('weekly', () => {
   }
 
   it('does nothing before the person connected', async () => {
-    await run('weekly.mjs', { env: fakeClaude() })
+    await run('daily.mjs', { env: fakeClaude() })
     assert.equal(await called(), '')
   })
 
-  it('does nothing within the week', async () => {
-    connected(Date.now() - 86_400_000)
-    await run('weekly.mjs', { env: fakeClaude() })
+  it('does nothing within the day', async () => {
+    connected(Date.now() - 3_600_000)
+    await run('daily.mjs', { env: fakeClaude() })
     assert.equal(await called(), '')
   })
 
-  it('starts one Claude past the week, then waits again', async () => {
-    connected(Date.now() - 8 * 86_400_000)
+  it('starts one Claude past the day, then waits again', async () => {
+    connected(Date.now() - 25 * 3_600_000)
     const env = fakeClaude()
-    await run('weekly.mjs', { env })
-    assert.match(await called(5000), /^1 -p \/deepn:connect semaine --plugin-dir \/le\/plugin --model sonnet --allowedTools Bash\(node \*\)/)
+    await run('daily.mjs', { env })
+    assert.match(await called(5000), /^1 -p \/deepn:connect jour --plugin-dir \/le\/plugin --model sonnet --allowedTools Bash\(node \*\)/)
     assert.ok(Date.now() - Number(readFileSync(join(data, 'last-sent'), 'utf8')) < 60_000)
+  })
+
+  it('tells Deepn its version once after an update, without waiting for the day', async () => {
+    connected(Date.now() - 3_600_000)
+    await run('daily.mjs', { env: fakeClaude() })
+    assert.deepEqual(calls.map(({ method, path, version }) => [method, path, version]), [['GET', '/v1/connection/facts', published]])
+    calls = []
+    await run('daily.mjs', { env: fakeClaude() })
+    assert.deepEqual(calls, [])
+    assert.equal(await called(), '')
   })
 
   it('does not start itself again from the Claude it started', async () => {
     connected(OLD)
-    await run('weekly.mjs', { env: { ...fakeClaude(), DEEPN_WEEKLY: '1' } })
+    await run('daily.mjs', { env: { ...fakeClaude(), DEEPN_DAILY: '1' } })
     assert.equal(await called(), '')
   })
 })

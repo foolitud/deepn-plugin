@@ -4,6 +4,9 @@ import { join } from 'node:path'
 
 const BASE_URL = process.env.DEEPN_API_URL ?? 'https://deepn.agence-lm.workers.dev'
 
+/** Given on each call, so that the app can tell the person when a newer plugin is out. */
+export const VERSION = JSON.parse(readFileSync(new URL('../.claude-plugin/plugin.json', import.meta.url), 'utf8')).version
+
 /** Said whenever this Mac is not connected yet: the person reads the code on the screen they were sent to. */
 export const NEED_CODE = 'Donnez-moi votre code perso : il est dans Deepn, sous Vous, puis Connect.'
 
@@ -31,13 +34,17 @@ export const addRefused = (data, lines) => writeFileSync(join(data, 'refused.jso
 export const lastSentIn = (data) => Number(read(join(data, 'last-sent')) || 0)
 export const noteSent = (data, now = Date.now()) => writeFileSync(join(data, 'last-sent'), String(now))
 
+/** The version Deepn last heard from this Mac. */
+export const toldVersionIn = (data) => read(join(data, 'version'))
+export const noteToldVersion = (data) => writeFileSync(join(data, 'version'), VERSION)
+
 /** `answer` when it worked, `signedOut` on a 401, and `failure` as a sentence to say to the person. A 5xx has already alerted the founder. */
 export async function ask(method, path, { token, body } = {}) {
   let response
   try {
     response = await fetch(`${BASE_URL}${path}`, {
       method,
-      headers: { 'content-type': 'application/json', ...(token ? { authorization: `Bearer ${token}` } : {}) },
+      headers: { 'content-type': 'application/json', 'x-deepn-plugin': VERSION, ...(token ? { authorization: `Bearer ${token}` } : {}) },
       body: body === undefined ? undefined : JSON.stringify(body),
     })
   } catch {
