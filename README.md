@@ -31,7 +31,7 @@ Quand une nouvelle version sort, Deepn le dit sous Vous, puis Connect, avec un m
 claude plugin update deepn@deepn
 ```
 
-Puis relancez Claude Code. Pour recevoir les versions suivantes sans rien faire, activez une fois la mise à jour automatique : `/plugin`, Marketplaces, deepn, Enable auto-update.
+Puis relancez Claude Code. Pour recevoir les versions suivantes sans rien faire, activez une fois la mise à jour automatique, dans un terminal : `claude`, puis `/plugin`, onglet Marketplaces, deepn, Enable auto-update. L'appli Claude lit les mêmes réglages.
 
 ## Ce que Claude lit
 
