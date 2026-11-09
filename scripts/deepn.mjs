@@ -8,7 +8,7 @@ const BASE_URL = process.env.DEEPN_API_URL ?? 'https://deepn.agence-lm.workers.d
 export const VERSION = JSON.parse(readFileSync(new URL('../.claude-plugin/plugin.json', import.meta.url), 'utf8')).version
 
 /** Said whenever this Mac is not connected yet: the person reads the code on the screen they were sent to. */
-export const NEED_CODE = 'Donnez-moi votre code perso : il est dans Deepn, sous Vous, puis Connect.'
+export const NEED_CODE = 'Donnez-moi votre code perso : il est dans deepn, sous Vous, puis Connect.'
 
 const FAILURE = { server: "Ça n'a pas marché, nous sommes prévenus.", offline: 'Pas de réseau pour le moment. Réessayez dans un instant.' }
 

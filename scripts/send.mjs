@@ -6,7 +6,7 @@ import { addRefused, ask, dataFolder, forgetToken, NEED_CODE, noteSent, refusedI
 
 const MOST_LINES = 40
 const LONGEST_LINE = 400
-const WRONG_CODE = 'Ce code ne va pas. Rouvrez Connect dans Deepn, sous Vous : un nouveau code vous y attend.'
+const WRONG_CODE = 'Ce code ne va pas. Rouvrez Connect dans deepn, sous Vous : un nouveau code vous y attend.'
 
 let input = ''
 for await (const chunk of process.stdin) input += chunk
@@ -58,4 +58,4 @@ if (signedOut) {
   stop(NEED_CODE)
 }
 noteSent(data)
-stop(`${agreed.length === 1 ? 'Une ligne envoyée' : `${agreed.length} lignes envoyées`} à Deepn. Vous les retrouverez dans l'appli, sous Connect, où chacune se retire.`)
+stop(`${agreed.length === 1 ? 'Une ligne envoyée' : `${agreed.length} lignes envoyées`} à deepn. Vous les retrouverez dans l'appli, sous Vous, dans « Qui vous êtes », où chacune se retire.`)

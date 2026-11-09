@@ -3,8 +3,8 @@
 // prints is said to the person as it is. A code is traded once for a connection, whose token never goes through Claude.
 import { ask, dataFolder, NEED_CODE, saveToken, tokenIn } from './deepn.mjs'
 
-const WRONG_CODE = 'Ce code ne va pas. Rouvrez Connect dans Deepn, sous Vous : un nouveau code vous y attend.'
-const CONNECTED = 'Connecté à Deepn.'
+const WRONG_CODE = 'Ce code ne va pas. Rouvrez Connect dans deepn, sous Vous : un nouveau code vous y attend.'
+const CONNECTED = 'Connecté à deepn.'
 
 const data = dataFolder()
 const at = process.argv.indexOf('--code')

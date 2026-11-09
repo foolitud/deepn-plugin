@@ -175,7 +175,7 @@ const sections = [
   ['Ses questions les plus récentes', list(typed.questions)],
   ['Ses demandes les plus récentes', list(typed.recent)],
   [`Ses demandes plus anciennes, jusqu'à ${PROMPT_DAYS} jours, échantillon`, list(typed.older)],
-  ['Déjà chez Deepn, avec le dernier jour où elles ont été vues', known.map((line) => `- ${line.seenOn ?? 'en général'} ${line.text}`).join('\n')],
+  ['Déjà chez deepn, avec le dernier jour où elles ont été vues', known.map((line) => `- ${line.seenOn ?? 'en général'} ${line.text}`).join('\n')],
   ['Refusé par la personne', refusedIn(data).map((line) => `- ${line}`).join('\n')],
 ]
 

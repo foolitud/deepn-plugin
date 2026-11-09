@@ -132,7 +132,7 @@ describe('collect', () => {
     writeFileSync(join(data, 'token'), 'jeton')
     answers['GET /v1/connection/facts'] = { json: { known: [{ text: 'Déjà là.', seenOn: '2026-11-02' }], removed: ['Plus jamais.'] } }
     const { out } = await run('collect.mjs')
-    assert.match(out, /Déjà chez Deepn[^\n]*\n- 2026-11-02 Déjà là\./)
+    assert.match(out, /Déjà chez deepn[^\n]*\n- 2026-11-02 Déjà là\./)
     assert.match(out, /Refusé par la personne\n- Plus jamais\./)
     assert.deepEqual(JSON.parse(readFileSync(join(data, 'refused.json'), 'utf8')), ['Plus jamais.'])
     assert.deepEqual(calls.map(({ method, path, token }) => [method, path, token]), [
@@ -242,10 +242,10 @@ describe('link', () => {
     assert.match((await run('link.mjs')).out, /votre code perso/)
     assert.deepEqual(calls, [])
     answers['POST /v1/connections'] = { json: { token: 'jeton' } }
-    assert.equal((await run('link.mjs', { args: ['--code', 'ABCD-EFGH'] })).out.trim(), 'Connecté à Deepn.')
+    assert.equal((await run('link.mjs', { args: ['--code', 'ABCD-EFGH'] })).out.trim(), 'Connecté à deepn.')
     assert.deepEqual(calls[0].body, { code: 'ABCD-EFGH' })
     assert.equal(readFileSync(join(data, 'token'), 'utf8'), 'jeton')
-    assert.equal((await run('link.mjs')).out.trim(), 'Connecté à Deepn.')
+    assert.equal((await run('link.mjs')).out.trim(), 'Connecté à deepn.')
     assert.equal(calls.length, 1)
   })
 
